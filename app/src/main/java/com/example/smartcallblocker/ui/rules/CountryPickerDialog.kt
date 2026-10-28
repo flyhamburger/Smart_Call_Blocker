@@ -17,8 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,7 +26,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -50,15 +47,9 @@ fun CountryPickerDialog(
     onSearchQueryChange: (String) -> Unit,
     onCountrySelected: (CountryInfo) -> Unit,
     onDismissRequest: () -> Unit,
-    isBlockAllInternationalActive: Boolean = false,
-    onToggleBlockAllInternational: (() -> Unit)? = null,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
     val countries = CountryCodeHelper.searchCountries(searchQuery)
-    val showFeaturedCard = searchQuery.isBlank() ||
-            "international".contains(searchQuery.trim(), ignoreCase = true) ||
-            "+".contains(searchQuery.trim()) ||
-            "00".contains(searchQuery.trim())
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -106,15 +97,7 @@ fun CountryPickerDialog(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (showFeaturedCard && onToggleBlockAllInternational != null) {
-                BlockAllInternationalPickerCard(
-                    isBlockAllInternationalActive = isBlockAllInternationalActive,
-                    onToggle = onToggleBlockAllInternational,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-            }
-
-            if (countries.isEmpty() && !showFeaturedCard) {
+            if (countries.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -146,91 +129,6 @@ fun CountryPickerDialog(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun BlockAllInternationalPickerCard(
-    isBlockAllInternationalActive: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onToggle),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = if (isBlockAllInternationalActive) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHigh
-            }
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "🌐",
-                fontSize = 32.sp,
-                modifier = Modifier.padding(end = 12.dp)
-            )
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Block All International Calls (+)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = "Block any call starting with '+' or '00'",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (isBlockAllInternationalActive) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    }
-                ) {
-                    Text(
-                        text = if (isBlockAllInternationalActive) "Active" else "Disabled",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isBlockAllInternationalActive) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Switch(
-                checked = isBlockAllInternationalActive,
-                onCheckedChange = { onToggle() }
-            )
         }
     }
 }
@@ -304,9 +202,7 @@ fun CountryPickerDialogPreview() {
             searchQuery = "",
             onSearchQueryChange = {},
             onCountrySelected = {},
-            onDismissRequest = {},
-            isBlockAllInternationalActive = true,
-            onToggleBlockAllInternational = {}
+            onDismissRequest = {}
         )
     }
 }

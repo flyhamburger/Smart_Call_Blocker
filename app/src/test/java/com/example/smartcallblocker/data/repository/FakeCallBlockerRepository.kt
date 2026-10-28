@@ -3,18 +3,11 @@ package com.example.smartcallblocker.data.repository
 import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
-import com.example.smartcallblocker.data.model.AppSettings
-import com.example.smartcallblocker.data.model.NotificationPreference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 
 class FakeCallBlockerRepository : CallBlockerRepository {
-
-    private val appSettingsFlow = MutableStateFlow(AppSettings())
-    override val appSettings: StateFlow<AppSettings> = appSettingsFlow.asStateFlow()
 
     private val countryCodeRulesFlow = MutableStateFlow<List<CountryCodeRuleEntity>>(emptyList())
     private val patternRulesFlow = MutableStateFlow<List<PatternRuleEntity>>(emptyList())
@@ -23,24 +16,6 @@ class FakeCallBlockerRepository : CallBlockerRepository {
     private var nextCountryRuleId = 1L
     private var nextPatternRuleId = 1L
     private var nextLogId = 1L
-
-    override suspend fun getAppSettings(): AppSettings = appSettingsFlow.value
-
-    override suspend fun updateBlockAllInternational(enabled: Boolean) {
-        appSettingsFlow.value = appSettingsFlow.value.copy(blockAllInternational = enabled)
-    }
-
-    override suspend fun updateBlockPrivateCallers(enabled: Boolean) {
-        appSettingsFlow.value = appSettingsFlow.value.copy(blockPrivateCallers = enabled)
-    }
-
-    override suspend fun updateNotificationPreference(preference: NotificationPreference) {
-        appSettingsFlow.value = appSettingsFlow.value.copy(notificationPreference = preference)
-    }
-
-    override suspend fun updateAppSettings(settings: AppSettings) {
-        appSettingsFlow.value = settings
-    }
 
     override fun getAllCountryCodeRules(): Flow<List<CountryCodeRuleEntity>> = countryCodeRulesFlow
 
@@ -93,8 +68,11 @@ class FakeCallBlockerRepository : CallBlockerRepository {
     }
 
     override suspend fun deletePatternRuleById(id: Long) {
-        patternRulesFlow.value = patternRulesFlow.value.filter { it.id != id }
+        patternRuleFlow.value = patternRulesFlow.value.filter { it.id != id }
     }
+
+    private val patternRuleFlow: MutableStateFlow<List<PatternRuleEntity>>
+        get() = patternRulesFlow
 
     override fun getAllBlockedCallLogs(): Flow<List<BlockedCallLogEntity>> = blockedCallLogsFlow
 

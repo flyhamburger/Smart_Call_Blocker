@@ -8,7 +8,6 @@ import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
 import com.example.smartcallblocker.data.repository.CallBlockerRepository
 import com.example.smartcallblocker.data.repository.CallBlockerRepositoryImpl
 import com.example.smartcallblocker.engine.CallScreeningEngine
-import com.example.smartcallblocker.notification.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +29,6 @@ class SmartCallScreeningService : CallScreeningService() {
                 countryCodeRuleDao = db.countryCodeRuleDao(),
                 patternRuleDao = db.patternRuleDao(),
                 blockedCallLogDao = db.blockedCallLogDao(),
-                context = applicationContext,
             )
         }
     }
@@ -41,29 +39,32 @@ class SmartCallScreeningService : CallScreeningService() {
 
     override fun onScreenCall(callDetails: Call.Details) {
         val handle: Uri? = callDetails.handle
-        val rawPhoneNumber: String? = handle?.schemeSpecificPart
+        val rawPhoneNumber: String = handle?.schemeSpecificPart ?: ""
+
+        if (rawPhoneNumber.isBlank()) {
+            val response = CallResponse.Builder().build()
+            respondToCall(callDetails, response)
+            return
+        }
 
         val currentRepo = repository ?: run {
             val db = AppDatabase.getInstance(applicationContext)
             CallBlockerRepositoryImpl(
                 countryCodeRuleDao = db.countryCodeRuleDao(),
                 patternRuleDao = db.patternRuleDao(),
-                blockedCallLogDao = db.blockedCallLogDao(),
-                context = applicationContext,
+                blockedCallLogDao = db.blockedCallLogDao()
             ).also { repository = it }
         }
 
         serviceScope.launch {
             try {
-                val appSettings = currentRepo.getAppSettings()
                 val countryCodeRules = currentRepo.getEnabledCountryCodeRules()
                 val patternRules = currentRepo.getEnabledPatternRules()
 
                 val result = engine.evaluate(
                     phoneNumber = rawPhoneNumber,
                     countryCodeRules = countryCodeRules,
-                    patternRules = patternRules,
-                    appSettings = appSettings
+                    patternRules = patternRules
                 )
 
                 if (result.shouldBlock) {
@@ -76,21 +77,12 @@ class SmartCallScreeningService : CallScreeningService() {
 
                     respondToCall(callDetails, response)
 
-                    val displayNum = if (rawPhoneNumber.isNullOrBlank()) "Private Caller" else rawPhoneNumber
-                    val blockReason = result.blockReason ?: "Blocked by rule"
                     val log = BlockedCallLogEntity(
-                        phoneNumber = displayNum,
+                        phoneNumber = rawPhoneNumber,
                         timestamp = System.currentTimeMillis(),
-                        blockReason = blockReason
+                        blockReason = result.blockReason ?: "Blocked by rule"
                     )
                     currentRepo.addBlockedCallLog(log)
-
-                    NotificationHelper.postBlockedCallNotification(
-                        context = applicationContext,
-                        phoneNumber = displayNum,
-                        blockReason = blockReason,
-                        preference = appSettings.notificationPreference
-                    )
                 } else {
                     val response = CallResponse.Builder().build()
                     respondToCall(callDetails, response)

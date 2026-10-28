@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -55,8 +53,6 @@ import com.example.smartcallblocker.ui.rules.CountryPickerDialog
 import com.example.smartcallblocker.ui.rules.PatternFilter
 import com.example.smartcallblocker.ui.rules.PatternRulesTab
 import com.example.smartcallblocker.ui.rules.RulesViewModel
-import com.example.smartcallblocker.ui.settings.SettingsScreen
-import com.example.smartcallblocker.ui.settings.SettingsViewModel
 
 enum class MainTab(
     val title: String,
@@ -65,8 +61,7 @@ enum class MainTab(
 ) {
     COUNTRY_CODES("Country Codes", Icons.Outlined.Public, Icons.Filled.Public),
     LOCAL_PATTERNS("Local Patterns", Icons.Outlined.Tag, Icons.Filled.Tag),
-    CALL_HISTORY("Call History", Icons.Outlined.History, Icons.Filled.History),
-    SETTINGS("Settings", Icons.Outlined.Settings, Icons.Filled.Settings)
+    CALL_HISTORY("Call History", Icons.Outlined.History, Icons.Filled.History)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,12 +69,10 @@ enum class MainTab(
 fun MainScreen(
     rulesViewModel: RulesViewModel,
     callHistoryViewModel: CallHistoryViewModel,
-    settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(MainTab.COUNTRY_CODES) }
 
-    val appSettings by rulesViewModel.appSettings.collectAsStateWithLifecycle()
     val countryCodeRules by rulesViewModel.countryCodeRules.collectAsStateWithLifecycle()
     val patternRules by rulesViewModel.filteredPatternRules.collectAsStateWithLifecycle()
     val allPatternRules by rulesViewModel.patternRules.collectAsStateWithLifecycle()
@@ -105,8 +98,6 @@ fun MainScreen(
         allPatternRulesCount = allPatternRules.size,
         blockedCallCount = blockedCallLogs.size,
         patternFilter = patternFilter,
-        isBlockAllInternationalActive = appSettings.blockAllInternational,
-        onToggleBlockAllInternational = rulesViewModel::toggleBlockAllInternational,
         onPatternFilterSelected = rulesViewModel::setPatternFilter,
         onToggleCountryCodeRule = rulesViewModel::toggleCountryCodeRule,
         onDeleteCountryCodeRule = rulesViewModel::deleteCountryCodeRule,
@@ -126,7 +117,6 @@ fun MainScreen(
         onConfirmClearHistory = callHistoryViewModel::clearAllLogs,
         onDismissClearDialog = callHistoryViewModel::dismissClearConfirmationDialog,
         onDeleteLog = callHistoryViewModel::deleteLog,
-        settingsViewModel = settingsViewModel,
         modifier = modifier
     )
 
@@ -135,9 +125,7 @@ fun MainScreen(
             searchQuery = countrySearchQuery,
             onSearchQueryChange = rulesViewModel::updateCountrySearchQuery,
             onCountrySelected = rulesViewModel::addCountryCodeRule,
-            onDismissRequest = rulesViewModel::closeCountryPicker,
-            isBlockAllInternationalActive = appSettings.blockAllInternational,
-            onToggleBlockAllInternational = rulesViewModel::toggleBlockAllInternational
+            onDismissRequest = rulesViewModel::closeCountryPicker
         )
     }
 
@@ -166,8 +154,6 @@ fun MainScreenContent(
     allPatternRulesCount: Int,
     blockedCallCount: Int,
     patternFilter: PatternFilter,
-    isBlockAllInternationalActive: Boolean,
-    onToggleBlockAllInternational: () -> Unit,
     onPatternFilterSelected: (PatternFilter) -> Unit,
     onToggleCountryCodeRule: (CountryCodeRuleEntity) -> Unit,
     onDeleteCountryCodeRule: (CountryCodeRuleEntity) -> Unit,
@@ -181,7 +167,6 @@ fun MainScreenContent(
     onConfirmClearHistory: () -> Unit,
     onDismissClearDialog: () -> Unit,
     onDeleteLog: (com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity) -> Unit,
-    settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -208,7 +193,6 @@ fun MainScreenContent(
                             MainTab.COUNTRY_CODES -> countryCodeRules.size
                             MainTab.LOCAL_PATTERNS -> allPatternRulesCount
                             MainTab.CALL_HISTORY -> blockedCallCount
-                            MainTab.SETTINGS -> 0
                         }
 
                         NavigationRailItem(
@@ -258,8 +242,6 @@ fun MainScreenContent(
                             countryCodeRules = countryCodeRules,
                             patternRules = patternRules,
                             patternFilter = patternFilter,
-                            isBlockAllInternationalActive = isBlockAllInternationalActive,
-                            onToggleBlockAllInternational = onToggleBlockAllInternational,
                             onPatternFilterSelected = onPatternFilterSelected,
                             onToggleCountryCodeRule = onToggleCountryCodeRule,
                             onDeleteCountryCodeRule = onDeleteCountryCodeRule,
@@ -272,8 +254,7 @@ fun MainScreenContent(
                             onClearHistoryClick = onClearHistoryClick,
                             onConfirmClearHistory = onConfirmClearHistory,
                             onDismissClearDialog = onDismissClearDialog,
-                            onDeleteLog = onDeleteLog,
-                            settingsViewModel = settingsViewModel
+                            onDeleteLog = onDeleteLog
                         )
                     }
                 }
@@ -314,7 +295,6 @@ fun MainScreenContent(
                                 MainTab.COUNTRY_CODES -> countryCodeRules.size
                                 MainTab.LOCAL_PATTERNS -> allPatternRulesCount
                                 MainTab.CALL_HISTORY -> blockedCallCount
-                                MainTab.SETTINGS -> 0
                             }
 
                             NavigationBarItem(
@@ -346,8 +326,6 @@ fun MainScreenContent(
                             countryCodeRules = countryCodeRules,
                             patternRules = patternRules,
                             patternFilter = patternFilter,
-                            isBlockAllInternationalActive = isBlockAllInternationalActive,
-                            onToggleBlockAllInternational = onToggleBlockAllInternational,
                             onPatternFilterSelected = onPatternFilterSelected,
                             onToggleCountryCodeRule = onToggleCountryCodeRule,
                             onDeleteCountryCodeRule = onDeleteCountryCodeRule,
@@ -360,8 +338,7 @@ fun MainScreenContent(
                             onClearHistoryClick = onClearHistoryClick,
                             onConfirmClearHistory = onConfirmClearHistory,
                             onDismissClearDialog = onDismissClearDialog,
-                            onDeleteLog = onDeleteLog,
-                            settingsViewModel = settingsViewModel
+                            onDeleteLog = onDeleteLog
                         )
                     }
                 }
@@ -401,8 +378,6 @@ private fun TabContent(
     countryCodeRules: List<CountryCodeRuleEntity>,
     patternRules: List<PatternRuleEntity>,
     patternFilter: PatternFilter,
-    isBlockAllInternationalActive: Boolean,
-    onToggleBlockAllInternational: () -> Unit,
     onPatternFilterSelected: (PatternFilter) -> Unit,
     onToggleCountryCodeRule: (CountryCodeRuleEntity) -> Unit,
     onDeleteCountryCodeRule: (CountryCodeRuleEntity) -> Unit,
@@ -415,8 +390,7 @@ private fun TabContent(
     onClearHistoryClick: () -> Unit,
     onConfirmClearHistory: () -> Unit,
     onDismissClearDialog: () -> Unit,
-    onDeleteLog: (com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity) -> Unit,
-    settingsViewModel: SettingsViewModel
+    onDeleteLog: (com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity) -> Unit
 ) {
     when (selectedTab) {
         MainTab.COUNTRY_CODES -> {
@@ -424,9 +398,7 @@ private fun TabContent(
                 rules = countryCodeRules,
                 onToggleRule = onToggleCountryCodeRule,
                 onDeleteRule = onDeleteCountryCodeRule,
-                onAddCountryClick = onAddCountryCodeClick,
-                isBlockAllInternationalActive = isBlockAllInternationalActive,
-                onToggleBlockAllInternational = onToggleBlockAllInternational
+                onAddCountryClick = onAddCountryCodeClick
             )
         }
 
@@ -449,12 +421,6 @@ private fun TabContent(
                 onConfirmClearHistory = onConfirmClearHistory,
                 onDismissClearDialog = onDismissClearDialog,
                 onDeleteLog = onDeleteLog
-            )
-        }
-
-        MainTab.SETTINGS -> {
-            SettingsScreen(
-                viewModel = settingsViewModel
             )
         }
     }

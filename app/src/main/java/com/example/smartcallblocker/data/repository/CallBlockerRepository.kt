@@ -3,20 +3,9 @@ package com.example.smartcallblocker.data.repository
 import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
-import com.example.smartcallblocker.data.model.AppSettings
-import com.example.smartcallblocker.data.model.NotificationPreference
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 
 interface CallBlockerRepository {
-    // App Settings
-    val appSettings: StateFlow<AppSettings>
-    suspend fun getAppSettings(): AppSettings
-    suspend fun updateBlockAllInternational(enabled: Boolean)
-    suspend fun updateBlockPrivateCallers(enabled: Boolean)
-    suspend fun updateNotificationPreference(preference: NotificationPreference)
-    suspend fun updateAppSettings(settings: AppSettings)
-
     // Country Code Rules
     fun getAllCountryCodeRules(): Flow<List<CountryCodeRuleEntity>>
     suspend fun getEnabledCountryCodeRules(): List<CountryCodeRuleEntity>

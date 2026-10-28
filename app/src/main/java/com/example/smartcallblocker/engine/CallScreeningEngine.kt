@@ -3,11 +3,8 @@ package com.example.smartcallblocker.engine
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.local.entity.RuleType
-import com.example.smartcallblocker.data.model.AppSettings
 
 enum class MatchedRuleType {
-    PRIVATE_CALLER,
-    ALL_INTERNATIONAL,
     COUNTRY_CODE,
     PREFIX,
     SUFFIX
@@ -22,46 +19,25 @@ data class EvaluationResult(
 class CallScreeningEngine {
 
     /**
-     * Evaluates an incoming phone number against app settings, country code rules, and pattern rules.
+     * Evaluates an incoming phone number against enabled country code rules and pattern rules.
      * Order of precedence:
-     * 1. Private/Unknown Caller check
-     * 2. Block All International check
-     * 3. Specific Country Code rules
-     * 4. Local Prefix rules
-     * 5. Local Suffix rules
+     * 1. Country Code rules
+     * 2. Local Prefix rules
+     * 3. Local Suffix rules
      */
     fun evaluate(
-        phoneNumber: String?,
-        countryCodeRules: List<CountryCodeRuleEntity> = emptyList(),
-        patternRules: List<PatternRuleEntity> = emptyList(),
-        appSettings: AppSettings = AppSettings(),
+        phoneNumber: String,
+        countryCodeRules: List<CountryCodeRuleEntity>,
+        patternRules: List<PatternRuleEntity>,
     ): EvaluationResult {
-        // 1. Private / Unknown Caller Check
-        if (isPrivateOrUnknown(phoneNumber)) {
-            return if (appSettings.blockPrivateCallers) {
-                EvaluationResult(
-                    shouldBlock = true,
-                    matchedRuleType = MatchedRuleType.PRIVATE_CALLER,
-                    blockReason = "Private Caller"
-                )
-            } else {
-                EvaluationResult(shouldBlock = false)
-            }
+        if (phoneNumber.isBlank()) {
+            return EvaluationResult(shouldBlock = false)
         }
 
-        val cleanNumber = phoneNumber!!.trim()
+        val cleanNumber = phoneNumber.trim()
         val digitsOnly = cleanNumber.filter { it.isDigit() }
 
-        // 2. Block All International Calls Check (+ or 00)
-        if (appSettings.blockAllInternational && (cleanNumber.startsWith("+") || cleanNumber.startsWith("00"))) {
-            return EvaluationResult(
-                shouldBlock = true,
-                matchedRuleType = MatchedRuleType.ALL_INTERNATIONAL,
-                blockReason = "All International Calls (+)"
-            )
-        }
-
-        // 3. Evaluate Country Code Rules
+        // 1. Evaluate Country Code Rules
         val enabledCcRules = countryCodeRules.filter { it.isEnabled }
         for (ccRule in enabledCcRules) {
             val ccDigits = ccRule.countryCode.filter { it.isDigit() }
@@ -79,7 +55,7 @@ class CallScreeningEngine {
         // Filter active pattern rules
         val enabledPatterns = patternRules.filter { it.isEnabled }
 
-        // 4. Evaluate Local Prefix Rules
+        // 2. Evaluate Local Prefix Rules
         val prefixRules = enabledPatterns.filter { it.type == RuleType.PREFIX }
         for (prefixRule in prefixRules) {
             val prefixDigits = prefixRule.pattern.filter { it.isDigit() }
@@ -95,7 +71,7 @@ class CallScreeningEngine {
             }
         }
 
-        // 5. Evaluate Local Suffix Rules
+        // 3. Evaluate Local Suffix Rules
         val suffixRules = enabledPatterns.filter { it.type == RuleType.SUFFIX }
         for (suffixRule in suffixRules) {
             val suffixDigits = suffixRule.pattern.filter { it.isDigit() }
@@ -112,16 +88,6 @@ class CallScreeningEngine {
         }
 
         return EvaluationResult(shouldBlock = false)
-    }
-
-    private fun isPrivateOrUnknown(phoneNumber: String?): Boolean {
-        if (phoneNumber == null || phoneNumber.isBlank()) return true
-        val trimmed = phoneNumber.trim().lowercase()
-        if (trimmed in PRIVATE_CALLER_KEYWORDS) {
-            return true
-        }
-        if (trimmed.startsWith("141")) return true
-        return false
     }
 
     private fun matchesCountryCode(
@@ -158,18 +124,5 @@ class CallScreeningEngine {
         suffixDigits: String,
     ): Boolean {
         return digitsOnly.endsWith(suffixDigits)
-    }
-
-    companion object {
-        private val PRIVATE_CALLER_KEYWORDS = setOf(
-            "private",
-            "restricted",
-            "unknown",
-            "withheld",
-            "anonymous",
-            "private number",
-            "unknown caller",
-            "141"
-        )
     }
 }

@@ -2,7 +2,6 @@ package com.example.smartcallblocker.ui.rules
 
 import com.example.smartcallblocker.data.local.CountryCodeHelper
 import com.example.smartcallblocker.data.local.entity.RuleType
-import com.example.smartcallblocker.data.model.NotificationPreference
 import com.example.smartcallblocker.data.repository.FakeCallBlockerRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,46 +39,9 @@ class RulesViewModelTest {
     }
 
     private fun subscribeToViewModelFlows(scope: kotlinx.coroutines.CoroutineScope) {
-        scope.launch { viewModel.appSettings.collect {} }
         scope.launch { viewModel.countryCodeRules.collect {} }
         scope.launch { viewModel.patternRules.collect {} }
         scope.launch { viewModel.filteredPatternRules.collect {} }
-    }
-
-    @Test
-    fun `toggleBlockAllInternational updates appSettings in repository`() = runTest {
-        subscribeToViewModelFlows(backgroundScope)
-
-        assertFalse(viewModel.appSettings.value.blockAllInternational)
-
-        viewModel.toggleBlockAllInternational()
-        assertTrue(viewModel.appSettings.value.blockAllInternational)
-
-        viewModel.toggleBlockAllInternational()
-        assertFalse(viewModel.appSettings.value.blockAllInternational)
-    }
-
-    @Test
-    fun `toggleBlockPrivateCallers updates appSettings in repository`() = runTest {
-        subscribeToViewModelFlows(backgroundScope)
-
-        assertFalse(viewModel.appSettings.value.blockPrivateCallers)
-
-        viewModel.toggleBlockPrivateCallers()
-        assertTrue(viewModel.appSettings.value.blockPrivateCallers)
-
-        viewModel.toggleBlockPrivateCallers()
-        assertFalse(viewModel.appSettings.value.blockPrivateCallers)
-    }
-
-    @Test
-    fun `setNotificationPreference updates appSettings in repository`() = runTest {
-        subscribeToViewModelFlows(backgroundScope)
-
-        assertEquals(NotificationPreference.ALL, viewModel.appSettings.value.notificationPreference)
-
-        viewModel.setNotificationPreference(NotificationPreference.INTERNATIONAL_ONLY)
-        assertEquals(NotificationPreference.INTERNATIONAL_ONLY, viewModel.appSettings.value.notificationPreference)
     }
 
     @Test
