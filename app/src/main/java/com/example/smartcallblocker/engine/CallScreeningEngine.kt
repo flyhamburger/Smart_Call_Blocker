@@ -1,0 +1,175 @@
+package com.example.smartcallblocker.engine
+
+import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
+import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
+import com.example.smartcallblocker.data.local.entity.RuleType
+import com.example.smartcallblocker.data.model.AppSettings
+
+enum class MatchedRuleType {
+    PRIVATE_CALLER,
+    ALL_INTERNATIONAL,
+    COUNTRY_CODE,
+    PREFIX,
+    SUFFIX
+}
+
+data class EvaluationResult(
+    val shouldBlock: Boolean,
+    val matchedRuleType: MatchedRuleType? = null,
+    val blockReason: String? = null,
+)
+
+class CallScreeningEngine {
+
+    /**
+     * Evaluates an incoming phone number against app settings, country code rules, and pattern rules.
+     * Order of precedence:
+     * 1. Private/Unknown Caller check
+     * 2. Block All International check
+     * 3. Specific Country Code rules
+     * 4. Local Prefix rules
+     * 5. Local Suffix rules
+     */
+    fun evaluate(
+        phoneNumber: String?,
+        countryCodeRules: List<CountryCodeRuleEntity> = emptyList(),
+        patternRules: List<PatternRuleEntity> = emptyList(),
+        appSettings: AppSettings = AppSettings(),
+    ): EvaluationResult {
+        // 1. Private / Unknown Caller Check
+        if (isPrivateOrUnknown(phoneNumber)) {
+            return if (appSettings.blockPrivateCallers) {
+                EvaluationResult(
+                    shouldBlock = true,
+                    matchedRuleType = MatchedRuleType.PRIVATE_CALLER,
+                    blockReason = "Private Caller"
+                )
+            } else {
+                EvaluationResult(shouldBlock = false)
+            }
+        }
+
+        val cleanNumber = phoneNumber!!.trim()
+        val digitsOnly = cleanNumber.filter { it.isDigit() }
+
+        // 2. Block All International Calls Check (+ or 00)
+        if (appSettings.blockAllInternational && (cleanNumber.startsWith("+") || cleanNumber.startsWith("00"))) {
+            return EvaluationResult(
+                shouldBlock = true,
+                matchedRuleType = MatchedRuleType.ALL_INTERNATIONAL,
+                blockReason = "All International Calls (+)"
+            )
+        }
+
+        // 3. Evaluate Country Code Rules
+        val enabledCcRules = countryCodeRules.filter { it.isEnabled }
+        for (ccRule in enabledCcRules) {
+            val ccDigits = ccRule.countryCode.filter { it.isDigit() }
+            if (ccDigits.isEmpty()) continue
+
+            if (matchesCountryCode(cleanNumber, ccRule.countryCode, ccDigits)) {
+                return EvaluationResult(
+                    shouldBlock = true,
+                    matchedRuleType = MatchedRuleType.COUNTRY_CODE,
+                    blockReason = "Country Code Rule matched: ${ccRule.countryName} (${ccRule.countryCode})"
+                )
+            }
+        }
+
+        // Filter active pattern rules
+        val enabledPatterns = patternRules.filter { it.isEnabled }
+
+        // 4. Evaluate Local Prefix Rules
+        val prefixRules = enabledPatterns.filter { it.type == RuleType.PREFIX }
+        for (prefixRule in prefixRules) {
+            val prefixDigits = prefixRule.pattern.filter { it.isDigit() }
+            if (prefixDigits.isEmpty()) continue
+
+            if (matchesPrefix(cleanNumber, digitsOnly, prefixDigits)) {
+                val label = prefixRule.label?.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: ""
+                return EvaluationResult(
+                    shouldBlock = true,
+                    matchedRuleType = MatchedRuleType.PREFIX,
+                    blockReason = "Prefix Rule matched: ${prefixRule.pattern}$label"
+                )
+            }
+        }
+
+        // 5. Evaluate Local Suffix Rules
+        val suffixRules = enabledPatterns.filter { it.type == RuleType.SUFFIX }
+        for (suffixRule in suffixRules) {
+            val suffixDigits = suffixRule.pattern.filter { it.isDigit() }
+            if (suffixDigits.isEmpty()) continue
+
+            if (matchesSuffix(digitsOnly, suffixDigits)) {
+                val label = suffixRule.label?.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: ""
+                return EvaluationResult(
+                    shouldBlock = true,
+                    matchedRuleType = MatchedRuleType.SUFFIX,
+                    blockReason = "Suffix Rule matched: ${suffixRule.pattern}$label"
+                )
+            }
+        }
+
+        return EvaluationResult(shouldBlock = false)
+    }
+
+    private fun isPrivateOrUnknown(phoneNumber: String?): Boolean {
+        if (phoneNumber == null || phoneNumber.isBlank()) return true
+        val trimmed = phoneNumber.trim().lowercase()
+        if (trimmed in PRIVATE_CALLER_KEYWORDS) {
+            return true
+        }
+        if (trimmed.startsWith("141")) return true
+        return false
+    }
+
+    private fun matchesCountryCode(
+        cleanNumber: String,
+        rawCountryCode: String,
+        ccDigits: String,
+    ): Boolean {
+        if (cleanNumber.startsWith("+$ccDigits") || cleanNumber.startsWith("00$ccDigits")) {
+            return true
+        }
+
+        val formattedCode = if (rawCountryCode.startsWith("+")) rawCountryCode else "+$rawCountryCode"
+        return cleanNumber.startsWith(formattedCode) ||
+                (cleanNumber.startsWith(ccDigits) && (cleanNumber.startsWith("+") || cleanNumber.startsWith("00")))
+    }
+
+    private fun matchesPrefix(
+        cleanNumber: String,
+        digitsOnly: String,
+        prefixDigits: String,
+    ): Boolean {
+        if (digitsOnly.startsWith(prefixDigits)) return true
+
+        val strippedLeading = when {
+            cleanNumber.startsWith("+") -> cleanNumber.substring(1)
+            cleanNumber.startsWith("00") -> cleanNumber.substring(2)
+            else -> cleanNumber
+        }
+        return strippedLeading.startsWith(prefixDigits)
+    }
+
+    private fun matchesSuffix(
+        digitsOnly: String,
+        suffixDigits: String,
+    ): Boolean {
+        return digitsOnly.endsWith(suffixDigits)
+    }
+
+    companion object {
+        private val PRIVATE_CALLER_KEYWORDS = setOf(
+            "private",
+            "restricted",
+            "unknown",
+            "withheld",
+            "anonymous",
+            "private number",
+            "unknown caller",
+            "141"
+        )
+    }
+}
