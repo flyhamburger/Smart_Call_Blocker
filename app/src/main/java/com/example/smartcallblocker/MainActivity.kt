@@ -12,8 +12,6 @@ import com.example.smartcallblocker.ui.history.CallHistoryViewModelFactory
 import com.example.smartcallblocker.ui.main.MainScreen
 import com.example.smartcallblocker.ui.rules.RulesViewModel
 import com.example.smartcallblocker.ui.rules.RulesViewModelFactory
-import com.example.smartcallblocker.ui.settings.SettingsViewModel
-import com.example.smartcallblocker.ui.settings.SettingsViewModelFactory
 import com.example.smartcallblocker.ui.theme.SmartCallBlockerTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,7 +25,6 @@ class MainActivity : ComponentActivity() {
             countryCodeRuleDao = db.countryCodeRuleDao(),
             patternRuleDao = db.patternRuleDao(),
             blockedCallLogDao = db.blockedCallLogDao(),
-            context = applicationContext
         )
 
         val rulesViewModel: RulesViewModel by viewModels {
@@ -38,16 +35,11 @@ class MainActivity : ComponentActivity() {
             CallHistoryViewModelFactory(repository)
         }
 
-        val settingsViewModel: SettingsViewModel by viewModels {
-            SettingsViewModelFactory(repository)
-        }
-
         setContent {
             SmartCallBlockerTheme {
                 MainScreen(
                     rulesViewModel = rulesViewModel,
-                    callHistoryViewModel = callHistoryViewModel,
-                    settingsViewModel = settingsViewModel
+                    callHistoryViewModel = callHistoryViewModel
                 )
             }
         }

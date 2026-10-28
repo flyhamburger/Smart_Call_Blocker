@@ -3,7 +3,6 @@ package com.example.smartcallblocker
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.local.entity.RuleType
-import com.example.smartcallblocker.data.model.AppSettings
 import com.example.smartcallblocker.engine.CallScreeningEngine
 import com.example.smartcallblocker.engine.MatchedRuleType
 import org.junit.Assert.assertEquals
@@ -19,75 +18,6 @@ class CallScreeningEngineTest {
     @Before
     fun setUp() {
         engine = CallScreeningEngine()
-    }
-
-    @Test
-    fun `private callers are blocked when blockPrivateCallers is true`() {
-        val settings = AppSettings(blockPrivateCallers = true)
-
-        // Null phone number
-        val nullResult = engine.evaluate(null, emptyList(), emptyList(), settings)
-        assertTrue(nullResult.shouldBlock)
-        assertEquals(MatchedRuleType.PRIVATE_CALLER, nullResult.matchedRuleType)
-        assertEquals("Private Caller", nullResult.blockReason)
-
-        // Blank phone number
-        val blankResult = engine.evaluate("   ", emptyList(), emptyList(), settings)
-        assertTrue(blankResult.shouldBlock)
-        assertEquals(MatchedRuleType.PRIVATE_CALLER, blankResult.matchedRuleType)
-        assertEquals("Private Caller", blankResult.blockReason)
-
-        // Private / Unknown / Restricted keyword strings
-        val privateKeywords = listOf("PRIVATE", "RESTRICTED", "UNKNOWN", "WITHHELD", "ANONYMOUS", "14122334455")
-        for (kw in privateKeywords) {
-            val res = engine.evaluate(kw, emptyList(), emptyList(), settings)
-            assertTrue("Expected $kw to be blocked as Private Caller", res.shouldBlock)
-            assertEquals(MatchedRuleType.PRIVATE_CALLER, res.matchedRuleType)
-            assertEquals("Private Caller", res.blockReason)
-        }
-    }
-
-    @Test
-    fun `private callers are allowed when blockPrivateCallers is false`() {
-        val settings = AppSettings(blockPrivateCallers = false)
-
-        val nullResult = engine.evaluate(null, emptyList(), emptyList(), settings)
-        assertFalse(nullResult.shouldBlock)
-
-        val blankResult = engine.evaluate("", emptyList(), emptyList(), settings)
-        assertFalse(blankResult.shouldBlock)
-
-        val keywordResult = engine.evaluate("RESTRICTED", emptyList(), emptyList(), settings)
-        assertFalse(keywordResult.shouldBlock)
-    }
-
-    @Test
-    fun `block all international calls blocks numbers starting with plus or double zero`() {
-        val settings = AppSettings(blockAllInternational = true)
-
-        // International with +
-        val resultPlus = engine.evaluate("+442079460991", emptyList(), emptyList(), settings)
-        assertTrue(resultPlus.shouldBlock)
-        assertEquals(MatchedRuleType.ALL_INTERNATIONAL, resultPlus.matchedRuleType)
-        assertEquals("All International Calls (+)", resultPlus.blockReason)
-
-        // International with 00
-        val resultDoubleZero = engine.evaluate("0018005550199", emptyList(), emptyList(), settings)
-        assertTrue(resultDoubleZero.shouldBlock)
-        assertEquals(MatchedRuleType.ALL_INTERNATIONAL, resultDoubleZero.matchedRuleType)
-        assertEquals("All International Calls (+)", resultDoubleZero.blockReason)
-
-        // Local number without + or 00 should NOT be blocked by blockAllInternational
-        val resultLocal = engine.evaluate("2125550199", emptyList(), emptyList(), settings)
-        assertFalse(resultLocal.shouldBlock)
-    }
-
-    @Test
-    fun `block all international calls is ignored when set to false`() {
-        val settings = AppSettings(blockAllInternational = false)
-
-        val resultPlus = engine.evaluate("+442079460991", emptyList(), emptyList(), settings)
-        assertFalse(resultPlus.shouldBlock)
     }
 
     @Test

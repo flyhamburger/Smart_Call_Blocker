@@ -7,8 +7,6 @@ import com.example.smartcallblocker.data.local.CountryInfo
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.local.entity.RuleType
-import com.example.smartcallblocker.data.model.AppSettings
-import com.example.smartcallblocker.data.model.NotificationPreference
 import com.example.smartcallblocker.data.repository.CallBlockerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,9 +25,6 @@ enum class PatternFilter {
 class RulesViewModel(
     private val repository: CallBlockerRepository
 ) : ViewModel() {
-
-    // App Settings
-    val appSettings: StateFlow<AppSettings> = repository.appSettings
 
     // Country Code Rules from DB
     val countryCodeRules: StateFlow<List<CountryCodeRuleEntity>> = repository.getAllCountryCodeRules()
@@ -89,27 +84,6 @@ class RulesViewModel(
 
     private val _patternInputError = MutableStateFlow<String?>(null)
     val patternInputError: StateFlow<String?> = _patternInputError.asStateFlow()
-
-    // Actions: Settings
-    fun toggleBlockAllInternational() {
-        viewModelScope.launch {
-            val current = repository.appSettings.value.blockAllInternational
-            repository.updateBlockAllInternational(!current)
-        }
-    }
-
-    fun toggleBlockPrivateCallers() {
-        viewModelScope.launch {
-            val current = repository.appSettings.value.blockPrivateCallers
-            repository.updateBlockPrivateCallers(!current)
-        }
-    }
-
-    fun setNotificationPreference(preference: NotificationPreference) {
-        viewModelScope.launch {
-            repository.updateNotificationPreference(preference)
-        }
-    }
 
     // Actions: Country Code Rules
     fun toggleCountryCodeRule(rule: CountryCodeRuleEntity) {

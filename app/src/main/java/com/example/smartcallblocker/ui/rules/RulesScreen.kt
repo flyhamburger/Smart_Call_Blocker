@@ -38,7 +38,6 @@ fun RulesScreen(
     viewModel: RulesViewModel,
     modifier: Modifier = Modifier
 ) {
-    val appSettings by viewModel.appSettings.collectAsStateWithLifecycle()
     val countryCodeRules by viewModel.countryCodeRules.collectAsStateWithLifecycle()
     val patternRules by viewModel.filteredPatternRules.collectAsStateWithLifecycle()
     val patternFilter by viewModel.patternFilter.collectAsStateWithLifecycle()
@@ -60,8 +59,6 @@ fun RulesScreen(
         countryCodeRules = countryCodeRules,
         patternRules = patternRules,
         patternFilter = patternFilter,
-        isBlockAllInternationalActive = appSettings.blockAllInternational,
-        onToggleBlockAllInternational = viewModel::toggleBlockAllInternational,
         onPatternFilterSelected = viewModel::setPatternFilter,
         onToggleCountryCodeRule = viewModel::toggleCountryCodeRule,
         onDeleteCountryCodeRule = viewModel::deleteCountryCodeRule,
@@ -83,9 +80,7 @@ fun RulesScreen(
             searchQuery = countrySearchQuery,
             onSearchQueryChange = viewModel::updateCountrySearchQuery,
             onCountrySelected = viewModel::addCountryCodeRule,
-            onDismissRequest = viewModel::closeCountryPicker,
-            isBlockAllInternationalActive = appSettings.blockAllInternational,
-            onToggleBlockAllInternational = viewModel::toggleBlockAllInternational
+            onDismissRequest = viewModel::closeCountryPicker
         )
     }
 
@@ -112,8 +107,6 @@ fun RulesScreenContent(
     countryCodeRules: List<CountryCodeRuleEntity>,
     patternRules: List<PatternRuleEntity>,
     patternFilter: PatternFilter,
-    isBlockAllInternationalActive: Boolean,
-    onToggleBlockAllInternational: () -> Unit,
     onPatternFilterSelected: (PatternFilter) -> Unit,
     onToggleCountryCodeRule: (CountryCodeRuleEntity) -> Unit,
     onDeleteCountryCodeRule: (CountryCodeRuleEntity) -> Unit,
@@ -217,9 +210,7 @@ fun RulesScreenContent(
                     rules = countryCodeRules,
                     onToggleRule = onToggleCountryCodeRule,
                     onDeleteRule = onDeleteCountryCodeRule,
-                    onAddCountryClick = onAddCountryCodeClick,
-                    isBlockAllInternationalActive = isBlockAllInternationalActive,
-                    onToggleBlockAllInternational = onToggleBlockAllInternational
+                    onAddCountryClick = onAddCountryCodeClick
                 )
 
                 1 -> PatternRulesTab(
@@ -250,8 +241,6 @@ fun RulesScreenContentPreview() {
                 PatternRuleEntity(id = 1, pattern = "1800", type = RuleType.PREFIX, isEnabled = true, label = "Toll Free Spam")
             ),
             patternFilter = PatternFilter.ALL,
-            isBlockAllInternationalActive = true,
-            onToggleBlockAllInternational = {},
             onPatternFilterSelected = {},
             onToggleCountryCodeRule = {},
             onDeleteCountryCodeRule = {},
