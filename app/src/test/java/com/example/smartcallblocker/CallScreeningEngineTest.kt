@@ -4,8 +4,10 @@ import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.local.entity.RuleType
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.engine.CallScreeningEngine
 import com.example.smartcallblocker.engine.MatchedRuleType
+import java.time.LocalTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -19,6 +21,106 @@ class CallScreeningEngineTest {
     @Before
     fun setUp() {
         engine = CallScreeningEngine()
+    }
+
+    @Test
+    fun `block all calls mode ALWAYS blocks any incoming number`() {
+        val settings = AppSettings(blockAllCallsMode = BlockAllCallsMode.ALWAYS)
+
+        val numbers = listOf("+1234567890", "0912345678", "18005550199", "2125550199", null, "   ", "RESTRICTED")
+        for (num in numbers) {
+            val result = engine.evaluate(num, appSettings = settings)
+            assertTrue("Expected $num to be blocked when mode is ALWAYS", result.shouldBlock)
+            assertEquals(MatchedRuleType.ALL_CALLS, result.matchedRuleType)
+            assertEquals("All Calls Blocked", result.blockReason)
+        }
+    }
+
+    @Test
+    fun `block all calls mode SCHEDULED blocks calls within standard daytime range`() {
+        val settings = AppSettings(
+            blockAllCallsMode = BlockAllCallsMode.SCHEDULED,
+            blockAllCallsStartTime = "09:00",
+            blockAllCallsEndTime = "17:00"
+        )
+
+        // Inside range (12:00)
+        val insideResult = engine.evaluate(
+            phoneNumber = "+12025550123",
+            appSettings = settings,
+            currentTime = LocalTime.of(12, 0)
+        )
+        assertTrue(insideResult.shouldBlock)
+        assertEquals(MatchedRuleType.ALL_CALLS, insideResult.matchedRuleType)
+        assertEquals("All Calls Blocked (Scheduled)", insideResult.blockReason)
+
+        // At start time boundary (09:00)
+        val startBoundary = engine.evaluate(
+            phoneNumber = "+12025550123",
+            appSettings = settings,
+            currentTime = LocalTime.of(9, 0)
+        )
+        assertTrue(startBoundary.shouldBlock)
+
+        // Outside range (08:59)
+        val beforeResult = engine.evaluate(
+            phoneNumber = "+12025550123",
+            appSettings = settings,
+            currentTime = LocalTime.of(8, 59)
+        )
+        assertFalse(beforeResult.shouldBlock)
+
+        // Outside range (17:00 boundary)
+        val endBoundary = engine.evaluate(
+            phoneNumber = "+12025550123",
+            appSettings = settings,
+            currentTime = LocalTime.of(17, 0)
+        )
+        assertFalse(endBoundary.shouldBlock)
+
+        // Outside range (18:00)
+        val afterResult = engine.evaluate(
+            phoneNumber = "+12025550123",
+            appSettings = settings,
+            currentTime = LocalTime.of(18, 0)
+        )
+        assertFalse(afterResult.shouldBlock)
+    }
+
+    @Test
+    fun `block all calls mode SCHEDULED handles overnight time range correctly`() {
+        val settings = AppSettings(
+            blockAllCallsMode = BlockAllCallsMode.SCHEDULED,
+            blockAllCallsStartTime = "22:00",
+            blockAllCallsEndTime = "07:00"
+        )
+
+        // Evaluated at 23:30 -> inside overnight range
+        val lateNight = engine.evaluate(
+            phoneNumber = "2125550199",
+            appSettings = settings,
+            currentTime = LocalTime.of(23, 30)
+        )
+        assertTrue(lateNight.shouldBlock)
+        assertEquals(MatchedRuleType.ALL_CALLS, lateNight.matchedRuleType)
+        assertEquals("All Calls Blocked (Scheduled)", lateNight.blockReason)
+
+        // Evaluated at 03:00 -> inside overnight range
+        val earlyMorning = engine.evaluate(
+            phoneNumber = "2125550199",
+            appSettings = settings,
+            currentTime = LocalTime.of(3, 0)
+        )
+        assertTrue(earlyMorning.shouldBlock)
+        assertEquals(MatchedRuleType.ALL_CALLS, earlyMorning.matchedRuleType)
+
+        // Evaluated at 14:00 -> outside overnight range
+        val afternoon = engine.evaluate(
+            phoneNumber = "2125550199",
+            appSettings = settings,
+            currentTime = LocalTime.of(14, 0)
+        )
+        assertFalse(afternoon.shouldBlock)
     }
 
     @Test

@@ -4,8 +4,11 @@ import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.local.entity.RuleType
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAllCallsMode
+import java.time.LocalTime
 
 enum class MatchedRuleType {
+    ALL_CALLS,
     PRIVATE_CALLER,
     ALL_INTERNATIONAL,
     COUNTRY_CODE,
@@ -24,18 +27,46 @@ class CallScreeningEngine {
     /**
      * Evaluates an incoming phone number against app settings, country code rules, and pattern rules.
      * Order of precedence:
-     * 1. Private/Unknown Caller check
-     * 2. Block All International check
-     * 3. Specific Country Code rules
-     * 4. Local Prefix rules
-     * 5. Local Suffix rules
+     * 1. Block All Calls check (ALWAYS or SCHEDULED within active time range)
+     * 2. Private/Unknown Caller check
+     * 3. Block All International check
+     * 4. Specific Country Code rules
+     * 5. Local Prefix rules
+     * 6. Local Suffix rules
      */
     fun evaluate(
         phoneNumber: String?,
         countryCodeRules: List<CountryCodeRuleEntity> = emptyList(),
         patternRules: List<PatternRuleEntity> = emptyList(),
         appSettings: AppSettings = AppSettings(),
+        currentTime: LocalTime = LocalTime.now()
     ): EvaluationResult {
+        // 0. High priority check: Block All Incoming Calls
+        when (appSettings.blockAllCallsMode) {
+            BlockAllCallsMode.ALWAYS -> {
+                return EvaluationResult(
+                    shouldBlock = true,
+                    matchedRuleType = MatchedRuleType.ALL_CALLS,
+                    blockReason = "All Calls Blocked"
+                )
+            }
+            BlockAllCallsMode.SCHEDULED -> {
+                if (isTimeInScheduledRange(
+                        currentTime = currentTime,
+                        startTimeStr = appSettings.blockAllCallsStartTime,
+                        endTimeStr = appSettings.blockAllCallsEndTime
+                    )
+                ) {
+                    return EvaluationResult(
+                        shouldBlock = true,
+                        matchedRuleType = MatchedRuleType.ALL_CALLS,
+                        blockReason = "All Calls Blocked (Scheduled)"
+                    )
+                }
+            }
+            BlockAllCallsMode.DISABLED -> { /* proceed */ }
+        }
+
         // 1. Private / Unknown Caller Check
         if (isPrivateOrUnknown(phoneNumber)) {
             return if (appSettings.blockPrivateCallers) {
@@ -112,6 +143,27 @@ class CallScreeningEngine {
         }
 
         return EvaluationResult(shouldBlock = false)
+    }
+
+    private fun isTimeInScheduledRange(
+        currentTime: LocalTime,
+        startTimeStr: String,
+        endTimeStr: String
+    ): Boolean {
+        return try {
+            val start = LocalTime.parse(startTimeStr)
+            val end = LocalTime.parse(endTimeStr)
+
+            if (start == end) {
+                true
+            } else if (start.isBefore(end)) {
+                !currentTime.isBefore(start) && currentTime.isBefore(end)
+            } else {
+                !currentTime.isBefore(start) || currentTime.isBefore(end)
+            }
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun isPrivateOrUnknown(phoneNumber: String?): Boolean {

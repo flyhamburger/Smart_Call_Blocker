@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import com.example.smartcallblocker.data.repository.CallBlockerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,18 @@ class SettingsViewModel(
     fun setNotificationPreference(preference: NotificationPreference) {
         viewModelScope.launch {
             repository.updateNotificationPreference(preference)
+        }
+    }
+
+    fun setBlockAllCallsMode(mode: BlockAllCallsMode) {
+        viewModelScope.launch {
+            repository.updateBlockAllCallsMode(mode)
+        }
+    }
+
+    fun setBlockAllCallsSchedule(startTime: String, endTime: String) {
+        viewModelScope.launch {
+            repository.updateBlockAllCallsSchedule(startTime, endTime)
         }
     }
 

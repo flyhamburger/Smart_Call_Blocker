@@ -9,6 +9,7 @@ import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,10 +41,22 @@ class CallBlockerRepositoryImpl(
         } catch (_: Exception) {
             NotificationPreference.ALL
         }
+        val blockAllCallsModeName = prefs.getString(KEY_BLOCK_ALL_CALLS_MODE, BlockAllCallsMode.DISABLED.name)
+        val blockAllCallsMode = try {
+            BlockAllCallsMode.valueOf(blockAllCallsModeName ?: BlockAllCallsMode.DISABLED.name)
+        } catch (_: Exception) {
+            BlockAllCallsMode.DISABLED
+        }
+        val blockAllCallsStartTime = prefs.getString(KEY_BLOCK_ALL_CALLS_START_TIME, "22:00") ?: "22:00"
+        val blockAllCallsEndTime = prefs.getString(KEY_BLOCK_ALL_CALLS_END_TIME, "07:00") ?: "07:00"
+
         return AppSettings(
             blockAllInternational = blockAllInt,
             blockPrivateCallers = blockPrivate,
-            notificationPreference = notifPref
+            notificationPreference = notifPref,
+            blockAllCallsMode = blockAllCallsMode,
+            blockAllCallsStartTime = blockAllCallsStartTime,
+            blockAllCallsEndTime = blockAllCallsEndTime
         )
     }
 
@@ -64,12 +77,31 @@ class CallBlockerRepositoryImpl(
         prefs?.edit()?.putString(KEY_NOTIF_PREF, preference.name)?.apply()
     }
 
+    override suspend fun updateBlockAllCallsMode(mode: BlockAllCallsMode) {
+        _appSettings.value = _appSettings.value.copy(blockAllCallsMode = mode)
+        prefs?.edit()?.putString(KEY_BLOCK_ALL_CALLS_MODE, mode.name)?.apply()
+    }
+
+    override suspend fun updateBlockAllCallsSchedule(startTime: String, endTime: String) {
+        _appSettings.value = _appSettings.value.copy(
+            blockAllCallsStartTime = startTime,
+            blockAllCallsEndTime = endTime
+        )
+        prefs?.edit()
+            ?.putString(KEY_BLOCK_ALL_CALLS_START_TIME, startTime)
+            ?.putString(KEY_BLOCK_ALL_CALLS_END_TIME, endTime)
+            ?.apply()
+    }
+
     override suspend fun updateAppSettings(settings: AppSettings) {
         _appSettings.value = settings
         prefs?.edit()
             ?.putBoolean(KEY_BLOCK_ALL_INT, settings.blockAllInternational)
             ?.putBoolean(KEY_BLOCK_PRIVATE, settings.blockPrivateCallers)
             ?.putString(KEY_NOTIF_PREF, settings.notificationPreference.name)
+            ?.putString(KEY_BLOCK_ALL_CALLS_MODE, settings.blockAllCallsMode.name)
+            ?.putString(KEY_BLOCK_ALL_CALLS_START_TIME, settings.blockAllCallsStartTime)
+            ?.putString(KEY_BLOCK_ALL_CALLS_END_TIME, settings.blockAllCallsEndTime)
             ?.apply()
     }
 
@@ -129,5 +161,8 @@ class CallBlockerRepositoryImpl(
         private const val KEY_BLOCK_ALL_INT = "block_all_international"
         private const val KEY_BLOCK_PRIVATE = "block_private_callers"
         private const val KEY_NOTIF_PREF = "notification_preference"
+        private const val KEY_BLOCK_ALL_CALLS_MODE = "block_all_calls_mode"
+        private const val KEY_BLOCK_ALL_CALLS_START_TIME = "block_all_calls_start_time"
+        private const val KEY_BLOCK_ALL_CALLS_END_TIME = "block_all_calls_end_time"
     }
 }

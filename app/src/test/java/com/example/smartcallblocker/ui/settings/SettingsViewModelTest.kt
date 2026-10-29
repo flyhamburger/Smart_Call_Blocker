@@ -1,5 +1,6 @@
 package com.example.smartcallblocker.ui.settings
 
+import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import com.example.smartcallblocker.data.repository.FakeCallBlockerRepository
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,31 @@ class SettingsViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `setBlockAllCallsMode updates mode in repository`() {
+        assertEquals(BlockAllCallsMode.DISABLED, viewModel.appSettings.value.blockAllCallsMode)
+
+        viewModel.setBlockAllCallsMode(BlockAllCallsMode.ALWAYS)
+        assertEquals(BlockAllCallsMode.ALWAYS, viewModel.appSettings.value.blockAllCallsMode)
+
+        viewModel.setBlockAllCallsMode(BlockAllCallsMode.SCHEDULED)
+        assertEquals(BlockAllCallsMode.SCHEDULED, viewModel.appSettings.value.blockAllCallsMode)
+
+        viewModel.setBlockAllCallsMode(BlockAllCallsMode.DISABLED)
+        assertEquals(BlockAllCallsMode.DISABLED, viewModel.appSettings.value.blockAllCallsMode)
+    }
+
+    @Test
+    fun `setBlockAllCallsSchedule updates start and end time in repository`() {
+        assertEquals("22:00", viewModel.appSettings.value.blockAllCallsStartTime)
+        assertEquals("07:00", viewModel.appSettings.value.blockAllCallsEndTime)
+
+        viewModel.setBlockAllCallsSchedule("23:00", "08:30")
+
+        assertEquals("23:00", viewModel.appSettings.value.blockAllCallsStartTime)
+        assertEquals("08:30", viewModel.appSettings.value.blockAllCallsEndTime)
     }
 
     @Test
