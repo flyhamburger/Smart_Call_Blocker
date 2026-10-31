@@ -11,18 +11,21 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.smartcallblocker.R
 import com.example.smartcallblocker.data.model.NotificationPreference
+import java.util.concurrent.atomic.AtomicInteger
 
 object NotificationHelper {
 
     const val CHANNEL_ID = "blocked_calls_channel"
     const val CHANNEL_NAME = "Blocked Calls Channel"
 
+    private val notificationId = AtomicInteger(0)
+
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_DEFAULT,
+                NotificationManager.IMPORTANCE_HIGH,
             ).apply {
                 description = "Notifications for blocked incoming calls"
             }
@@ -83,11 +86,12 @@ object NotificationHelper {
                 NotificationCompat.BigTextStyle()
                     .bigText("Blocked call from $phoneNumber\nReason: $blockReason")
             )
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .build()
 
-        val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-        notificationManager.notify(notificationId, notification)
+        val id = notificationId.incrementAndGet()
+        notificationManager.notify(id, notification)
     }
 }

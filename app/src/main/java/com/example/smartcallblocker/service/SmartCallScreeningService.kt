@@ -67,15 +67,6 @@ class SmartCallScreeningService : CallScreeningService() {
                 )
 
                 if (result.shouldBlock) {
-                    val response = CallResponse.Builder()
-                        .setDisallowCall(true)
-                        .setRejectCall(true)
-                        .setSkipCallLog(false)
-                        .setSkipNotification(false)
-                        .build()
-
-                    respondToCall(callDetails, response)
-
                     val displayNum = if (rawPhoneNumber.isNullOrBlank()) "Private Caller" else rawPhoneNumber
                     val blockReason = result.blockReason ?: "Blocked by rule"
                     val log = BlockedCallLogEntity(
@@ -91,6 +82,15 @@ class SmartCallScreeningService : CallScreeningService() {
                         blockReason = blockReason,
                         preference = appSettings.notificationPreference
                     )
+
+                    val response = CallResponse.Builder()
+                        .setDisallowCall(true)
+                        .setRejectCall(true)
+                        .setSkipCallLog(false)
+                        .setSkipNotification(true)
+                        .build()
+
+                    respondToCall(callDetails, response)
                 } else {
                     val response = CallResponse.Builder().build()
                     respondToCall(callDetails, response)
