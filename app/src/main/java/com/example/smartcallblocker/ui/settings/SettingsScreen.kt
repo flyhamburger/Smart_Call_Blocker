@@ -20,6 +20,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.CallEnd
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.PersonOff
@@ -56,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAction
 import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import com.example.smartcallblocker.ui.theme.SmartCallBlockerTheme
@@ -78,6 +80,7 @@ fun SettingsScreen(
         appSettings = appSettings,
         isNotificationPermissionGranted = isNotificationPermissionGranted,
         onNotificationPreferenceChange = viewModel::setNotificationPreference,
+        onBlockActionChange = viewModel::updateBlockAction,
         onBlockAllCallsModeChange = viewModel::setBlockAllCallsMode,
         onBlockAllCallsScheduleChange = viewModel::setBlockAllCallsSchedule,
         onToggleBlockPrivateCallers = viewModel::toggleBlockPrivateCallers,
@@ -92,6 +95,7 @@ fun SettingsScreenContent(
     appSettings: AppSettings,
     isNotificationPermissionGranted: Boolean,
     onNotificationPreferenceChange: (NotificationPreference) -> Unit,
+    onBlockActionChange: (BlockAction) -> Unit,
     onBlockAllCallsModeChange: (BlockAllCallsMode) -> Unit,
     onBlockAllCallsScheduleChange: (String, String) -> Unit,
     onToggleBlockPrivateCallers: () -> Unit,
@@ -130,6 +134,13 @@ fun SettingsScreenContent(
             NotificationSettingsCard(
                 selectedPreference = appSettings.notificationPreference,
                 onPreferenceSelected = onNotificationPreferenceChange
+            )
+        }
+
+        item {
+            BlockedCallActionCard(
+                selectedAction = appSettings.blockAction,
+                onActionSelected = onBlockActionChange
             )
         }
 
@@ -592,6 +603,100 @@ private enum class NotificationOption(
 }
 
 @Composable
+private fun BlockedCallActionCard(
+    selectedAction: BlockAction,
+    onActionSelected: (BlockAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CallEnd,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Blocked Call Action",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup()
+            ) {
+                BlockedCallActionOption.entries.forEach { option ->
+                    val isSelected = selectedAction == option.action
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = isSelected,
+                                onClick = { onActionSelected(option.action) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = null
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = option.title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                            Text(
+                                text = option.subtitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private enum class BlockedCallActionOption(
+    val action: BlockAction,
+    val title: String,
+    val subtitle: String
+) {
+    REJECT(
+        action = BlockAction.REJECT,
+        title = "Reject Call Directly",
+        subtitle = "Disconnect incoming blocked calls immediately"
+    ),
+    SILENCE(
+        action = BlockAction.SILENCE,
+        title = "Silence Call",
+        subtitle = "Silence the ringtone without disconnecting the caller"
+    )
+}
+
+@Composable
 private fun PrivateCallersCard(
     isBlockPrivateEnabled: Boolean,
     onToggleBlockPrivateCallers: () -> Unit,
@@ -696,12 +801,14 @@ private fun SettingsScreenPreview() {
                 blockAllInternational = true,
                 blockPrivateCallers = true,
                 notificationPreference = NotificationPreference.ALL,
+                blockAction = BlockAction.REJECT,
                 blockAllCallsMode = BlockAllCallsMode.SCHEDULED,
                 blockAllCallsStartTime = "22:00",
                 blockAllCallsEndTime = "07:00"
             ),
             isNotificationPermissionGranted = false,
             onNotificationPreferenceChange = {},
+            onBlockActionChange = {},
             onBlockAllCallsModeChange = {},
             onBlockAllCallsScheduleChange = { _, _ -> },
             onToggleBlockPrivateCallers = {},

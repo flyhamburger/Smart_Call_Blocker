@@ -5,6 +5,7 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import com.example.smartcallblocker.data.local.AppDatabase
 import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
+import com.example.smartcallblocker.data.model.BlockAction
 import com.example.smartcallblocker.data.repository.CallBlockerRepository
 import com.example.smartcallblocker.data.repository.CallBlockerRepositoryImpl
 import com.example.smartcallblocker.engine.CallScreeningEngine
@@ -83,12 +84,22 @@ class SmartCallScreeningService : CallScreeningService() {
                         preference = appSettings.notificationPreference
                     )
 
-                    val response = CallResponse.Builder()
+                    val responseBuilder = CallResponse.Builder()
                         .setDisallowCall(true)
-                        .setRejectCall(true)
                         .setSkipCallLog(false)
                         .setSkipNotification(true)
-                        .build()
+
+                    if (appSettings.blockAction == BlockAction.SILENCE) {
+                        responseBuilder
+                            .setRejectCall(false)
+                            .setSilenceCall(true)
+                    } else {
+                        responseBuilder
+                            .setRejectCall(true)
+                            .setSilenceCall(false)
+                    }
+
+                    val response = responseBuilder.build()
 
                     respondToCall(callDetails, response)
                 } else {

@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAction
 import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import com.example.smartcallblocker.data.repository.CallBlockerRepository
@@ -45,6 +46,12 @@ class SettingsViewModel(
     fun setNotificationPreference(preference: NotificationPreference) {
         viewModelScope.launch {
             repository.updateNotificationPreference(preference)
+        }
+    }
+
+    fun updateBlockAction(blockAction: BlockAction) {
+        viewModelScope.launch {
+            repository.updateBlockAction(blockAction)
         }
     }
 

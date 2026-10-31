@@ -4,6 +4,7 @@ import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAction
 import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +38,10 @@ class FakeCallBlockerRepository : CallBlockerRepository {
 
     override suspend fun updateNotificationPreference(preference: NotificationPreference) {
         appSettingsFlow.value = appSettingsFlow.value.copy(notificationPreference = preference)
+    }
+
+    override suspend fun updateBlockAction(blockAction: BlockAction) {
+        appSettingsFlow.value = appSettingsFlow.value.copy(blockAction = blockAction)
     }
 
     override suspend fun updateBlockAllCallsMode(mode: BlockAllCallsMode) {

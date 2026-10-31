@@ -1,5 +1,6 @@
 package com.example.smartcallblocker.ui.settings
 
+import com.example.smartcallblocker.data.model.BlockAction
 import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import com.example.smartcallblocker.data.repository.FakeCallBlockerRepository
@@ -97,6 +98,17 @@ class SettingsViewModelTest {
 
         viewModel.setNotificationPreference(NotificationPreference.NONE)
         assertEquals(NotificationPreference.NONE, viewModel.appSettings.value.notificationPreference)
+    }
+
+    @Test
+    fun `updateBlockAction updates blockAction in repository`() {
+        assertEquals(BlockAction.REJECT, viewModel.appSettings.value.blockAction)
+
+        viewModel.updateBlockAction(BlockAction.SILENCE)
+        assertEquals(BlockAction.SILENCE, viewModel.appSettings.value.blockAction)
+
+        viewModel.updateBlockAction(BlockAction.REJECT)
+        assertEquals(BlockAction.REJECT, viewModel.appSettings.value.blockAction)
     }
 
     @Test

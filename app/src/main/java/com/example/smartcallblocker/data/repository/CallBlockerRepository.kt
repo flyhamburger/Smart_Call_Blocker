@@ -4,6 +4,7 @@ import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAction
 import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,7 @@ interface CallBlockerRepository {
     suspend fun updateBlockAllInternational(enabled: Boolean)
     suspend fun updateBlockPrivateCallers(enabled: Boolean)
     suspend fun updateNotificationPreference(preference: NotificationPreference)
+    suspend fun updateBlockAction(blockAction: BlockAction)
     suspend fun updateBlockAllCallsMode(mode: BlockAllCallsMode)
     suspend fun updateBlockAllCallsSchedule(startTime: String, endTime: String)
     suspend fun updateAppSettings(settings: AppSettings)

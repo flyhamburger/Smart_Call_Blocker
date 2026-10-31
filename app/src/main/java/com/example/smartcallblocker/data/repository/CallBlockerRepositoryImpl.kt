@@ -9,6 +9,7 @@ import com.example.smartcallblocker.data.local.entity.BlockedCallLogEntity
 import com.example.smartcallblocker.data.local.entity.CountryCodeRuleEntity
 import com.example.smartcallblocker.data.local.entity.PatternRuleEntity
 import com.example.smartcallblocker.data.model.AppSettings
+import com.example.smartcallblocker.data.model.BlockAction
 import com.example.smartcallblocker.data.model.BlockAllCallsMode
 import com.example.smartcallblocker.data.model.NotificationPreference
 import kotlinx.coroutines.flow.Flow
@@ -41,6 +42,12 @@ class CallBlockerRepositoryImpl(
         } catch (_: Exception) {
             NotificationPreference.ALL
         }
+        val blockActionName = prefs.getString(KEY_BLOCK_ACTION, BlockAction.REJECT.name)
+        val blockAction = try {
+            BlockAction.valueOf(blockActionName ?: BlockAction.REJECT.name)
+        } catch (_: Exception) {
+            BlockAction.REJECT
+        }
         val blockAllCallsModeName = prefs.getString(KEY_BLOCK_ALL_CALLS_MODE, BlockAllCallsMode.DISABLED.name)
         val blockAllCallsMode = try {
             BlockAllCallsMode.valueOf(blockAllCallsModeName ?: BlockAllCallsMode.DISABLED.name)
@@ -54,6 +61,7 @@ class CallBlockerRepositoryImpl(
             blockAllInternational = blockAllInt,
             blockPrivateCallers = blockPrivate,
             notificationPreference = notifPref,
+            blockAction = blockAction,
             blockAllCallsMode = blockAllCallsMode,
             blockAllCallsStartTime = blockAllCallsStartTime,
             blockAllCallsEndTime = blockAllCallsEndTime
@@ -75,6 +83,11 @@ class CallBlockerRepositoryImpl(
     override suspend fun updateNotificationPreference(preference: NotificationPreference) {
         _appSettings.value = _appSettings.value.copy(notificationPreference = preference)
         prefs?.edit()?.putString(KEY_NOTIF_PREF, preference.name)?.apply()
+    }
+
+    override suspend fun updateBlockAction(blockAction: BlockAction) {
+        _appSettings.value = _appSettings.value.copy(blockAction = blockAction)
+        prefs?.edit()?.putString(KEY_BLOCK_ACTION, blockAction.name)?.apply()
     }
 
     override suspend fun updateBlockAllCallsMode(mode: BlockAllCallsMode) {
@@ -99,6 +112,7 @@ class CallBlockerRepositoryImpl(
             ?.putBoolean(KEY_BLOCK_ALL_INT, settings.blockAllInternational)
             ?.putBoolean(KEY_BLOCK_PRIVATE, settings.blockPrivateCallers)
             ?.putString(KEY_NOTIF_PREF, settings.notificationPreference.name)
+            ?.putString(KEY_BLOCK_ACTION, settings.blockAction.name)
             ?.putString(KEY_BLOCK_ALL_CALLS_MODE, settings.blockAllCallsMode.name)
             ?.putString(KEY_BLOCK_ALL_CALLS_START_TIME, settings.blockAllCallsStartTime)
             ?.putString(KEY_BLOCK_ALL_CALLS_END_TIME, settings.blockAllCallsEndTime)
@@ -161,6 +175,7 @@ class CallBlockerRepositoryImpl(
         private const val KEY_BLOCK_ALL_INT = "block_all_international"
         private const val KEY_BLOCK_PRIVATE = "block_private_callers"
         private const val KEY_NOTIF_PREF = "notification_preference"
+        private const val KEY_BLOCK_ACTION = "block_action"
         private const val KEY_BLOCK_ALL_CALLS_MODE = "block_all_calls_mode"
         private const val KEY_BLOCK_ALL_CALLS_START_TIME = "block_all_calls_start_time"
         private const val KEY_BLOCK_ALL_CALLS_END_TIME = "block_all_calls_end_time"
