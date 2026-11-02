@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,11 +76,33 @@ fun CountryCodeRulesTab(
                 )
             }
 
+            if (!isBlockAllInternationalActive) {
+                item {
+                    Text(
+                        text = "Enable 'Block All International Calls (+)' above to whitelist specific countries",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            item {
+                Text(
+                    text = "Whitelisted Country Codes",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                )
+            }
+
             if (rules.isEmpty()) {
                 item {
                     EmptyCountryCodeRulesView(
                         onAddCountryClick = onAddCountryClick,
-                        modifier = Modifier.padding(top = 12.dp)
+                        isBlockAllInternationalActive = isBlockAllInternationalActive,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             } else {
@@ -97,14 +120,19 @@ fun CountryCodeRulesTab(
         }
 
         ExtendedFloatingActionButton(
-            onClick = onAddCountryClick,
+            onClick = {
+                if (isBlockAllInternationalActive) {
+                    onAddCountryClick()
+                }
+            },
             icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-            text = { Text("Add Country Code") },
+            text = { Text("Add Whitelisted Country") },
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
+                .alpha(if (isBlockAllInternationalActive) 1.0f else 0.38f)
         )
     }
 }
@@ -282,6 +310,7 @@ fun CountryCodeRuleItemCard(
 @Composable
 fun EmptyCountryCodeRulesView(
     onAddCountryClick: () -> Unit,
+    isBlockAllInternationalActive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     OutlinedCard(
@@ -315,7 +344,7 @@ fun EmptyCountryCodeRulesView(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "No Specific Country Rules",
+                text = "No Whitelisted Country Codes",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -324,7 +353,7 @@ fun EmptyCountryCodeRulesView(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Add specific country codes (e.g. +1, +44) to block calls from individual countries.",
+                text = "Add specific country codes (e.g. +1, +44) to whitelist calls when international call blocking is active.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -334,14 +363,27 @@ fun EmptyCountryCodeRulesView(
 
             Button(
                 onClick = onAddCountryClick,
-                shape = RoundedCornerShape(12.dp)
+                enabled = isBlockAllInternationalActive,
+                shape = RoundedCornerShape(12.dp),
+                modifier = if (!isBlockAllInternationalActive) Modifier.alpha(0.38f) else Modifier
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = null,
                     modifier = Modifier.padding(end = 8.dp)
                 )
-                Text("Add Country Code")
+                Text("Add Whitelisted Country")
+            }
+
+            if (!isBlockAllInternationalActive) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Enable 'Block All International Calls (+)' above to whitelist specific countries",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
         }
     }

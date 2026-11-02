@@ -83,26 +83,21 @@ class CallScreeningEngine {
         val cleanNumber = phoneNumber!!.trim()
         val digitsOnly = cleanNumber.filter { it.isDigit() }
 
-        // 2. Block All International Calls Check (+ or 00)
+        // 2. Block All International Calls Check (+ or 00) with Whitelisted Country Codes Exemption
         if (appSettings.blockAllInternational && (cleanNumber.startsWith("+") || cleanNumber.startsWith("00"))) {
-            return EvaluationResult(
-                shouldBlock = true,
-                matchedRuleType = MatchedRuleType.ALL_INTERNATIONAL,
-                blockReason = "All International Calls (+)"
-            )
-        }
+            val enabledCcRules = countryCodeRules.filter { it.isEnabled }
+            val isWhitelisted = enabledCcRules.any { ccRule ->
+                val ccDigits = ccRule.countryCode.filter { it.isDigit() }
+                ccDigits.isNotEmpty() && matchesCountryCode(cleanNumber, ccRule.countryCode, ccDigits)
+            }
 
-        // 3. Evaluate Country Code Rules
-        val enabledCcRules = countryCodeRules.filter { it.isEnabled }
-        for (ccRule in enabledCcRules) {
-            val ccDigits = ccRule.countryCode.filter { it.isDigit() }
-            if (ccDigits.isEmpty()) continue
-
-            if (matchesCountryCode(cleanNumber, ccRule.countryCode, ccDigits)) {
+            if (isWhitelisted) {
+                return EvaluationResult(shouldBlock = false)
+            } else {
                 return EvaluationResult(
                     shouldBlock = true,
-                    matchedRuleType = MatchedRuleType.COUNTRY_CODE,
-                    blockReason = "Country Code Rule matched: ${ccRule.countryName} (${ccRule.countryCode})"
+                    matchedRuleType = MatchedRuleType.ALL_INTERNATIONAL,
+                    blockReason = "All International Calls (+)"
                 )
             }
         }

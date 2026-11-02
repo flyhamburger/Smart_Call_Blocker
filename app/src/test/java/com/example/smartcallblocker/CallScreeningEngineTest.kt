@@ -193,28 +193,31 @@ class CallScreeningEngineTest {
     }
 
     @Test
-    fun `country code rule blocks matching caller with plus or double zero`() {
+    fun `whitelisted country code numbers are allowed when blockAllInternational is true`() {
+        val settings = AppSettings(blockAllInternational = true)
         val ccRules = listOf(
-            CountryCodeRuleEntity(id = 1, countryCode = "+1", countryName = "United States", isEnabled = true),
-            CountryCodeRuleEntity(id = 2, countryCode = "+44", countryName = "United Kingdom", isEnabled = true)
+            CountryCodeRuleEntity(id = 1, countryCode = "+44", countryName = "United Kingdom", isEnabled = true),
+            CountryCodeRuleEntity(id = 2, countryCode = "+91", countryName = "India", isEnabled = false)
         )
 
-        // Caller starting with +1
-        val result1 = engine.evaluate("+18005550199", ccRules, emptyList())
-        assertTrue(result1.shouldBlock)
-        assertEquals(MatchedRuleType.COUNTRY_CODE, result1.matchedRuleType)
-        assertTrue(result1.blockReason?.contains("United States") == true)
+        // Whitelisted caller starting with +44 -> allowed
+        val result1 = engine.evaluate("+442079460991", ccRules, emptyList(), settings)
+        assertFalse(result1.shouldBlock)
 
-        // Caller starting with 001
-        val result2 = engine.evaluate("0018005550199", ccRules, emptyList())
-        assertTrue(result2.shouldBlock)
-        assertEquals(MatchedRuleType.COUNTRY_CODE, result2.matchedRuleType)
+        // Whitelisted caller starting with 0044 -> allowed
+        val result2 = engine.evaluate("00442079460991", ccRules, emptyList(), settings)
+        assertFalse(result2.shouldBlock)
 
-        // Caller starting with +44
-        val result3 = engine.evaluate("+442079460991", ccRules, emptyList())
+        // Non-whitelisted caller starting with +1 -> blocked
+        val result3 = engine.evaluate("+18005550199", ccRules, emptyList(), settings)
         assertTrue(result3.shouldBlock)
-        assertEquals(MatchedRuleType.COUNTRY_CODE, result3.matchedRuleType)
-        assertTrue(result3.blockReason?.contains("United Kingdom") == true)
+        assertEquals(MatchedRuleType.ALL_INTERNATIONAL, result3.matchedRuleType)
+        assertEquals("All International Calls (+)", result3.blockReason)
+
+        // Caller from disabled country rule (+91) -> blocked because rule is disabled
+        val result4 = engine.evaluate("+919876543210", ccRules, emptyList(), settings)
+        assertTrue(result4.shouldBlock)
+        assertEquals(MatchedRuleType.ALL_INTERNATIONAL, result4.matchedRuleType)
     }
 
     @Test
@@ -265,19 +268,14 @@ class CallScreeningEngineTest {
     }
 
     @Test
-    fun `country code rule takes precedence over prefix and suffix`() {
+    fun `whitelisted country code exempts caller from international blocking`() {
+        val settings = AppSettings(blockAllInternational = true)
         val ccRules = listOf(
             CountryCodeRuleEntity(id = 1, countryCode = "+91", countryName = "India", isEnabled = true)
         )
-        val patternRules = listOf(
-            PatternRuleEntity(id = 1, pattern = "987", type = RuleType.PREFIX, isEnabled = true),
-            PatternRuleEntity(id = 2, pattern = "010", type = RuleType.SUFFIX, isEnabled = true)
-        )
 
-        val result = engine.evaluate("+919876543010", ccRules, patternRules)
-        assertTrue(result.shouldBlock)
-        assertEquals(MatchedRuleType.COUNTRY_CODE, result.matchedRuleType)
-        assertTrue(result.blockReason?.contains("India") == true)
+        val result = engine.evaluate("+919876543010", ccRules, emptyList(), settings)
+        assertFalse(result.shouldBlock)
     }
 
     @Test

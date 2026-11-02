@@ -72,7 +72,7 @@ fun CountryPickerDialog(
                 .padding(horizontal = 20.dp)
         ) {
             Text(
-                text = "Select Country",
+                text = "Select Whitelisted Country",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
