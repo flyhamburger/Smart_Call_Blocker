@@ -14,3 +14,11 @@
 .cxx
 local.properties
 /.agent/
+
+# Keystores & signing keys
+*.keystore
+*.jks
+*.pepk
+*.p12
+secrets.properties
+
