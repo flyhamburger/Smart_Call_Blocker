@@ -164,11 +164,7 @@ class CallScreeningEngine {
     private fun isPrivateOrUnknown(phoneNumber: String?): Boolean {
         if (phoneNumber == null || phoneNumber.isBlank()) return true
         val trimmed = phoneNumber.trim().lowercase()
-        if (trimmed in PRIVATE_CALLER_KEYWORDS) {
-            return true
-        }
-        if (trimmed.startsWith("141")) return true
-        return false
+        return trimmed in PRIVATE_CALLER_KEYWORDS
     }
 
     private fun matchesCountryCode(
@@ -214,9 +210,10 @@ class CallScreeningEngine {
             "unknown",
             "withheld",
             "anonymous",
+            "blocked",
+            "unavailable",
             "private number",
-            "unknown caller",
-            "141"
+            "unknown caller"
         )
     }
 }

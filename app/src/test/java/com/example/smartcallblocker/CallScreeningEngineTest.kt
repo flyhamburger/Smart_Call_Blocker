@@ -140,7 +140,7 @@ class CallScreeningEngineTest {
         assertEquals("Private Caller", blankResult.blockReason)
 
         // Private / Unknown / Restricted keyword strings
-        val privateKeywords = listOf("PRIVATE", "RESTRICTED", "UNKNOWN", "WITHHELD", "ANONYMOUS", "14122334455")
+        val privateKeywords = listOf("PRIVATE", "RESTRICTED", "UNKNOWN", "WITHHELD", "ANONYMOUS", "BLOCKED", "UNAVAILABLE")
         for (kw in privateKeywords) {
             val res = engine.evaluate(kw, emptyList(), emptyList(), settings)
             assertTrue("Expected $kw to be blocked as Private Caller", res.shouldBlock)

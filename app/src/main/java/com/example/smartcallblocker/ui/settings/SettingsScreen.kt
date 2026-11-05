@@ -730,7 +730,7 @@ private fun PrivateCallersCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Blocks callers who withhold their phone number, e.g., HK 141 dial prefix",
+                    text = "Blocks callers who withhold their phone number",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
