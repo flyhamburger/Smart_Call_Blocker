@@ -92,7 +92,7 @@ Smart Call Blocker follows modern Android development best practices with **Unid
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/smart-call-blocker.git
+git clone https://github.com/flyhamburger/Smart_Call_Blocker.git
 cd smart-call-blocker
 ```
 
