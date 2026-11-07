@@ -4,7 +4,7 @@
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin_2.0-7F52FF.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack_Compose_Material_3-4285F4.svg?style=flat&logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
 [![Telecom](https://img.shields.io/badge/API-CallScreeningService-FF6F00.svg?style=flat&logo=android)](https://developer.android.com/reference/android/telecom/CallScreeningService)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 
 **Smart Call Blocker** is a modern, feature-rich Android application designed to protect users from unwanted telemarketers, spam calls, robocalls, and international scams. Built with **Kotlin**, **Jetpack Compose Material 3**, and Android's native Telecom `CallScreeningService`, it provides real-time, low-latency call interception without sacrificing battery life or privacy.
 
@@ -135,6 +135,3 @@ Smart Call Blocker includes unit tests for the screening engine, repository impl
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
